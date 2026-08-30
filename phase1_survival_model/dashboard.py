@@ -785,7 +785,8 @@ def prepare_and_score(_model, feature_columns, categorical_features, data_bytes,
     return df
 
 
-def warm_bar(df, x_col, y_col, *, color="#8E8DA8", color_map=None, sort_x=None):
+def warm_bar(df, x_col, y_col, *, color="#8E8DA8", color_map=None, sort_x=None,
+             label_format=".0f"):
     x_axis = alt.Axis(
         labelColor="#000000", labelAngle=-18,
         labelFont="Inter, sans-serif",
@@ -797,15 +798,21 @@ def warm_bar(df, x_col, y_col, *, color="#8E8DA8", color_map=None, sort_x=None):
         titleColor="#000000", titleFont="Inter, sans-serif",
     )
 
-    y_max = df[y_col].max() * 1.15
+    y_max = df[y_col].max() * 1.2
 
     x_enc = alt.X(f"{x_col}:N", title=None, sort=sort_x, axis=x_axis)
     y_enc = alt.Y(f"{y_col}:Q", title=y_col, axis=y_axis,
                   scale=alt.Scale(domainMax=y_max))
+    tooltip = [
+        alt.Tooltip(f"{x_col}:N", title=x_col),
+        alt.Tooltip(f"{y_col}:Q", title=y_col, format=label_format),
+    ]
+
+    base = alt.Chart(df)
 
     if color_map:
-        chart = (
-            alt.Chart(df)
+        bars = (
+            base
             .mark_bar(cornerRadiusTopLeft=5, cornerRadiusTopRight=5, opacity=0.9)
             .encode(
                 x=x_enc, y=y_enc,
@@ -814,17 +821,29 @@ def warm_bar(df, x_col, y_col, *, color="#8E8DA8", color_map=None, sort_x=None):
                     scale=alt.Scale(domain=list(color_map.keys()), range=list(color_map.values())),
                     legend=None,
                 ),
+                tooltip=tooltip,
             )
         )
     else:
-        chart = (
-            alt.Chart(df)
+        bars = (
+            base
             .mark_bar(color=color, cornerRadiusTopLeft=5, cornerRadiusTopRight=5, opacity=0.9)
-            .encode(x=x_enc, y=y_enc)
+            .encode(x=x_enc, y=y_enc, tooltip=tooltip)
         )
 
+    labels = (
+        base
+        .mark_text(dy=-8, fontSize=11, color="#3d3c52",
+                   font="Inter, sans-serif", fontWeight=600)
+        .encode(
+            x=x_enc,
+            y=y_enc,
+            text=alt.Text(f"{y_col}:Q", format=label_format),
+        )
+    )
+
     return (
-        chart
+        (bars + labels)
         .properties(
             height=260,
             background="#F2E8F1",
@@ -933,6 +952,8 @@ def main():
         )
         display.columns = ["Animal Name", "Animal Type", "Age Group",
                            "Days in Shelter", "Risk Score", "Reason"]
+        display.index = range(1, len(display) + 1)
+        display.index.name = "Rank"
 
         st.dataframe(display, use_container_width=True)
         st.caption(f"Showing {len(display):,} of {len(df):,} animals currently in the shelter.")
@@ -983,7 +1004,7 @@ def main():
                     unsafe_allow_html=True)
         st.altair_chart(
             warm_bar(age_df, "Age Group", "Avg Risk Score",
-                     color="#8E8DA8", sort_x=present),
+                     color="#8E8DA8", sort_x=present, label_format=".1f"),
             use_container_width=True,
         )
 
