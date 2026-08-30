@@ -1,9 +1,12 @@
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
 import altair as alt
 from datetime import date
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 AGE_BINS = [-0.01, 0.5, 2, 7, 30]
 AGE_LABELS = ["Juvenile (0-6mo)", "Young (6mo-2yr)", "Adult (2-7yr)", "Senior (7yr+)"]
@@ -659,7 +662,7 @@ section[data-testid="stMain"] {
 
 @st.cache_resource
 def load_model():
-    with open("shelter_model.pkl", "rb") as f:
+    with open(os.path.join(BASE_DIR, "shelter_model.pkl"), "rb") as f:
         bundle = pickle.load(f)
     return bundle["model"], bundle["feature_columns"], bundle["categorical_features"]
 
@@ -895,7 +898,7 @@ def main():
         df = prepare_and_score(model, feature_columns, categorical_features,
                                data_bytes, is_upload=True)
     else:
-        df_raw = pd.read_csv("data/cleaned_length_of_stay.csv")
+        df_raw = pd.read_csv(os.path.join(BASE_DIR, "data", "cleaned_length_of_stay.csv"))
         df = prepare_and_score(model, feature_columns, categorical_features, df_raw)
 
     if df.empty:
