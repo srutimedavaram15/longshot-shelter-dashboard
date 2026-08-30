@@ -2,7 +2,7 @@
 
 Longshot ranks shelter animals by their statistical risk of an extended stay, so shelter staff can prioritize marketing, foster outreach, or fee adjustments for the animals who need it most.
 
-**[Live demo →](#)** *(link added once deployed)*
+**[Live demo →](https://longshot-shelter-dashboard-hruynmeyusabpsp56kvboz.streamlit.app)**
 
 ## The problem
 
