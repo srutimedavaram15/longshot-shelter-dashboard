@@ -770,7 +770,10 @@ def prepare_and_score(_model, feature_columns, categorical_features, data_bytes,
     df["Days in Shelter"] = (today - intake_parsed).dt.days.clip(lower=0)
 
     name_col = next((c for c in ("Name", "Animal ID") if c in df.columns), None)
-    df["Animal Name"] = df[name_col].fillna("Unnamed") if name_col else "Unnamed"
+    df["Animal Name"] = (
+        df[name_col].fillna("Unnamed").astype(str).str.lstrip("*")
+        if name_col else "Unnamed"
+    )
 
     hr = _model.hazard_ratios_
     majority_cols = compute_majority_cols(df_encoded, categorical_features)
