@@ -1,0 +1,23 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'phase1_survival_model/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'phase1_survival_model/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        working-directory: phase1_survival_model
+        run: docker build -t longshot-dashboard .
