@@ -858,6 +858,14 @@ def warm_bar(df, x_col, y_col, *, color="#8E8DA8", color_map=None, sort_x=None,
 
 # ── App ────────────────────────────────────────────────────────────────────────
 
+def get_missing_columns(headers, required_columns):
+    has_name = "Name" in headers or "Animal ID" in headers
+    missing = [c for c in required_columns if c not in headers]
+    if not has_name:
+        missing.append("Name (or Animal ID)")
+    return missing
+
+
 def main():
     st.set_page_config(page_title="Longshot", layout="wide", page_icon="🐾")
     st.markdown(f"<style>{CSS}</style>", unsafe_allow_html=True)
@@ -906,10 +914,7 @@ def main():
     if uploaded:
         data_bytes = uploaded.read()
         headers = pd.read_csv(pd.io.common.BytesIO(data_bytes), nrows=0).columns.tolist()
-        has_name = "Name" in headers or "Animal ID" in headers
-        missing = [c for c in REQUIRED_COLUMNS if c not in headers]
-        if not has_name:
-            missing.append("Name (or Animal ID)")
+        missing = get_missing_columns(headers, REQUIRED_COLUMNS)
         if missing:
             st.error(
                 f"Your CSV is missing {len(missing)} required column(s): "

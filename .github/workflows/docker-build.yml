@@ -18,6 +18,21 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: phase1_survival_model
+        run: pip install -r requirements.txt
+
+      # Runs BEFORE the Docker build — if a test fails, the pipeline stops
+      # here and never wastes time building or deploying broken code.
+      - name: Run tests
+        working-directory: phase1_survival_model
+        run: python -m pytest test_dashboard.py -v
+
       # Always build, on both PRs and pushes to main — this is the CI check
       # that catches build-breaking mistakes before they go live.
       - name: Build Docker image
