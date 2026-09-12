@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Build and Deploy Longshot Dashboard
 
 on:
   push:
@@ -11,13 +11,51 @@ on:
       - 'phase1_survival_model/**'
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      # Always build, on both PRs and pushes to main — this is the CI check
+      # that catches build-breaking mistakes before they go live.
       - name: Build Docker image
         working-directory: phase1_survival_model
-        run: docker build -t longshot-dashboard .
+        run: docker build --platform linux/amd64 -t longshot-dashboard .
+
+      # Everything below only runs on an actual push to main (not on PRs),
+      # since we only want to deploy confirmed, merged code, not every
+      # in-progress pull request.
+
+      - name: Authenticate to Google Cloud
+        if: github.event_name == 'push'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        if: github.event_name == 'push'
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        if: github.event_name == 'push'
+        run: gcloud auth configure-docker us-west2-docker.pkg.dev --quiet
+
+      - name: Tag and push image to Artifact Registry
+        if: github.event_name == 'push'
+        working-directory: phase1_survival_model
+        run: |
+          docker tag longshot-dashboard us-west2-docker.pkg.dev/longshot-dashboard/longshot-repo/longshot-dashboard
+          docker push us-west2-docker.pkg.dev/longshot-dashboard/longshot-repo/longshot-dashboard
+
+      - name: Deploy to Cloud Run
+        if: github.event_name == 'push'
+        run: |
+          gcloud run deploy longshot-dashboard \
+            --image us-west2-docker.pkg.dev/longshot-dashboard/longshot-repo/longshot-dashboard \
+            --region us-west2 \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8501 \
+            --project longshot-dashboard
