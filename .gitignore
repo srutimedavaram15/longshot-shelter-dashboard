@@ -3,3 +3,4 @@ __pycache__/
 .DS_Store
 *.npy
 phase2_multimodal_prototype/data/train_images/
+longshot-gcp-key.json
